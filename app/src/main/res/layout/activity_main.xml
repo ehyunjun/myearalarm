@@ -9,7 +9,7 @@
     tools:context=".MainActivity">
 
     <TextView
-        android:id="@+id/textView"
+        android:id="@+id/tvTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="알람 추가하기"
@@ -22,50 +22,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <Button
-        android:id="@+id/btnClockAlarm"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="시간 알람 추가"
-
-        android:background="@drawable/btn_clock_alarm_outline"
-        android:backgroundTint="@null"
-        app:backgroundTint="@null"
-        android:textColor="@color/button_text"
-        android:gravity="start|center_vertical"
-        android:paddingStart="24dp"
-        android:paddingTop="12dp"
-        android:paddingBottom="12dp"
-
-        android:layout_marginStart="6dp"
-        android:layout_marginEnd="6dp"
-
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView" />
-
-    <Button
-        android:id="@+id/btnTimerAlarm"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="타이머 알람 추가"
-
-        android:background="@drawable/btn_timer_alarm_outline"
-        android:backgroundTint="@null"
-        app:backgroundTint="@null"
-        android:textColor="@color/button_text"
-        android:gravity="start|center_vertical"
-        android:paddingStart="24dp"
-        android:paddingTop="12dp"
-        android:paddingBottom="12dp"
-
-        android:layout_marginStart="6dp"
-        android:layout_marginEnd="6dp"
-
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/btnClockAlarm" />
-
     <LinearLayout
         android:id="@+id/layoutClockSection"
         android:layout_width="0dp"
@@ -74,23 +30,42 @@
 
         android:layout_marginStart="6dp"
         android:layout_marginEnd="6dp"
-        android:layout_marginTop="26dp"
+        android:layout_marginTop="30dp"
         android:layout_marginBottom="16dp"
 
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btnTimerAlarm"
+        app:layout_constraintTop_toBottomOf="@id/tvTitle"
         app:layout_constraintBottom_toTopOf="@id/layoutTimerSection">
 
-        <TextView
-            android:id="@+id/tvClockAlarm"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="시간 알람"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:paddingStart="8dp"
-            android:paddingBottom="4dp" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+
+            <TextView
+                android:id="@+id/tvClockAlarm"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="시간 알람"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:paddingStart="8dp"
+                android:paddingBottom="4dp" />
+
+            <ImageButton
+                android:id="@+id/btnAddClockAlarm"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@android:drawable/ic_input_add"
+                android:background="@android:color/transparent"
+                app:tint="@color/btn_add_alarm"
+                android:contentDescription="시간 알람 추가" />
+
+        </LinearLayout>
 
         <ListView
             android:id="@+id/listClockAlarm"
@@ -109,23 +84,41 @@
 
         android:layout_marginStart="6dp"
         android:layout_marginEnd="6dp"
-        android:layout_marginBottom="20dp"
+        android:layout_marginBottom="30dp"
 
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@id/layoutClockSection"
         app:layout_constraintBottom_toBottomOf="parent">
-        
-        <TextView
-            android:id="@+id/tvTimerAlarm"
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="타이머 알람"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:paddingStart="8dp"
-            android:paddingBottom="4dp" />
-    
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/tvTimerAlarm"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="타이머 알람"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:paddingStart="8dp"
+                android:paddingBottom="4dp" />
+
+            <ImageButton
+                android:id="@+id/btnTimerAlarm"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@android:drawable/ic_input_add"
+                app:tint="@color/btn_add_alarm"
+                android:background="@android:color/transparent"
+                android:contentDescription="타이머 알람 추가" />
+
+        </LinearLayout>
+
         <ListView
             android:id="@+id/listTimerAlarm"
             android:layout_width="match_parent"
