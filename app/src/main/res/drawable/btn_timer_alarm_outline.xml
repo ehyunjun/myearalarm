@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 바탕: 앱 배경색 -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/app_background" />
+        </shape>
+    </item>
+
+    <!-- 아래쪽 선만 -->
+    <item android:gravity="bottom">
+        <shape android:shape="rectangle">
+            <size android:height="1dp" />
+            <solid android:color="@color/button_stroke" />
+        </shape>
+    </item>
+
+</layer-list>
