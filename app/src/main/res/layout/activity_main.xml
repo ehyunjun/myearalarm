@@ -8,6 +8,20 @@
     android:background="@color/app_background"
     tools:context=".MainActivity">
 
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="알람 추가하기"
+        android:textSize="26sp"
+        android:textStyle="bold"
+        android:paddingStart="16dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="0dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
     <Button
         android:id="@+id/btnClockAlarm"
         android:layout_width="0dp"
@@ -52,16 +66,74 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/btnClockAlarm" />
 
-    <TextView
-        android:id="@+id/textView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="알람 추가하기"
-        android:textSize="24sp"
-        android:paddingStart="16dp"
-        android:paddingTop="16dp"
-        android:paddingBottom="0dp"
-        app:layout_constraintTop_toTopOf="parent"
+    <LinearLayout
+        android:id="@+id/layoutClockSection"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:orientation="vertical"
+
+        android:layout_marginStart="6dp"
+        android:layout_marginEnd="6dp"
+        android:layout_marginTop="26dp"
+        android:layout_marginBottom="16dp"
+
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnTimerAlarm"
+        app:layout_constraintBottom_toTopOf="@id/layoutTimerSection">
+
+        <TextView
+            android:id="@+id/tvClockAlarm"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="시간 알람"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:paddingStart="8dp"
+            android:paddingBottom="4dp" />
+
+        <ListView
+            android:id="@+id/listClockAlarm"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:divider="@android:color/transparent"
+            android:dividerHeight="4dp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/layoutTimerSection"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:orientation="vertical"
+
+        android:layout_marginStart="6dp"
+        android:layout_marginEnd="6dp"
+        android:layout_marginBottom="20dp"
+
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/layoutClockSection"
+        app:layout_constraintBottom_toBottomOf="parent">
+        
+        <TextView
+            android:id="@+id/tvTimerAlarm"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="타이머 알람"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:paddingStart="8dp"
+            android:paddingBottom="4dp" />
+    
+        <ListView
+            android:id="@+id/listTimerAlarm"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:divider="@android:color/transparent"
+            android:dividerHeight="4dp" />
+    </LinearLayout>
+
+
 </androidx.constraintlayout.widget.ConstraintLayout>
