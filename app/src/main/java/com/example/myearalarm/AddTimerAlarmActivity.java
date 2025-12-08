@@ -1,6 +1,8 @@
 package com.example.myearalarm;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.widget.Button;
 import android.widget.NumberPicker;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -21,6 +23,25 @@ public class AddTimerAlarmActivity extends AppCompatActivity {
         npHour = findViewById(R.id.npHour);
         npMinute = findViewById(R.id.npMinute);
         npSecond = findViewById(R.id.npSecond);
+
+        Button btnSetTimer = findViewById(R.id.btnSetTimer);
+        Button btnCancelTimer = findViewById(R.id.btnCancelTimer);
+
+        btnCancelTimer.setOnClickListener(v -> {
+            finish();
+        });
+
+        btnSetTimer.setOnClickListener(v -> {
+            int h = npHour.getValue();
+            int m = npMinute.getValue();
+            int s = npSecond.getValue();
+            Intent result = new Intent();
+            result.putExtra("hour", h);
+            result.putExtra("minute", m);
+            result.putExtra("second", s);
+            setResult(RESULT_OK, result);
+            finish();
+        });
 
         setupNumberPickers(npHour, 0, 23);
         setupNumberPickers(npMinute, 0, 59);
