@@ -59,8 +59,8 @@
 
             <ImageButton
                 android:id="@+id/btnAddClockAlarm"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:src="@android:drawable/ic_input_add"
                 android:background="@android:color/transparent"
                 app:tint="@color/btn_add_alarm"
@@ -111,8 +111,8 @@
 
             <ImageButton
                 android:id="@+id/btnTimerAlarm"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:src="@android:drawable/ic_input_add"
                 app:tint="@color/btn_add_alarm"
                 android:background="@android:color/transparent"
