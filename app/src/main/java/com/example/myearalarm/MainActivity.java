@@ -2,6 +2,7 @@ package com.example.myearalarm;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.ListView;
@@ -28,7 +29,51 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<String> timerAlarms = new ArrayList<>();
     private ArrayAdapter<String> clockAdapter;
     private ArrayAdapter<String> timerAdapter;
+    private ArrayList<Long> timerRemainingMillis = new ArrayList<>();
+    private ArrayList<android.os.CountDownTimer> timerTimers = new ArrayList<>();
 
+    private void addNewTimer(long totalMillis, String initialText) {
+        timerAlarms.add(initialText);
+        timerRemainingMillis.add(totalMillis);
+
+        CountDownTimer timer = new CountDownTimer(totalMillis, 1000) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                int idx = timerTimers.indexOf(this);
+                if (idx == -1) return;
+
+                timerRemainingMillis.set(idx, millisUntilFinished);
+
+                int totalSec = (int) (millisUntilFinished / 1000);
+                int h = totalSec / 3600;
+                int m = (totalSec % 3600) / 60;
+                int s = totalSec % 60;
+
+                String text = String.format(Locale.getDefault(),
+                        "%02d시간 %02d분 %02d초", h, m, s);
+                timerAlarms.set(idx, text);
+                timerAdapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onFinish() {
+                int idx = timerTimers.indexOf(this);
+                if (idx == -1) return;
+
+                timerRemainingMillis.set(idx, 0L);
+                String text = String.format(Locale.getDefault(),
+                        "%02d시간 %02d분 %02d초", 0, 0, 0);
+                timerAlarms.set(idx, text);
+                timerAdapter.notifyDataSetChanged();
+
+                Toast.makeText(MainActivity.this,
+                        "타이머 알람이 종료되었습니다.", Toast.LENGTH_SHORT).show();
+            }
+        };
+
+        timerTimers.add(timer);
+        timer.start();
+    }
 
 
 
@@ -102,15 +147,12 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        boolean isEdit   = data.getBooleanExtra("isEdit", false);
+        boolean isEdit = data.getBooleanExtra("isEdit", false);
         boolean isDelete = data.getBooleanExtra("isDelete", false);
-        int index        = data.getIntExtra("index", -1);
-
-        // 공통으로 Add 액티비티에서 만들어준 표시용 문자열
+        int index = data.getIntExtra("index", -1);
         String displayText = data.getStringExtra("displayText");
 
         if (requestCode == REQ_ADD_CLOCK) {
-            // 만약 displayText가 null이면 안전하게 한 번 더 만들어주기 (백업용)
             if (displayText == null) {
                 int ampm = data.getIntExtra("ampm", 0);
                 int hour = data.getIntExtra("hour", 0);
@@ -122,44 +164,51 @@ public class MainActivity extends AppCompatActivity {
 
             if (isEdit) {
                 if (isDelete) {
-                    // 삭제
                     if (index >= 0 && index < clockAlarms.size()) {
                         clockAlarms.remove(index);
                     }
                 } else {
-                    // 수정
                     if (index >= 0 && index < clockAlarms.size()) {
                         clockAlarms.set(index, displayText);
                     }
                 }
             } else {
-                // 새로 추가
                 clockAlarms.add(displayText);
             }
 
             clockAdapter.notifyDataSetChanged();
 
         } else if (requestCode == REQ_ADD_TIMER) {
+            int h = data.getIntExtra("hour", 0);
+            int m = data.getIntExtra("minute", 0);
+            int s = data.getIntExtra("second", 0);
+
+            long totalMillis = (h * 3600 + m * 60 + s) * 1000L;
+
             if (displayText == null) {
-                int h = data.getIntExtra("hour", 0);
-                int m = data.getIntExtra("minute", 0);
-                int s = data.getIntExtra("second", 0);
                 displayText = String.format(Locale.getDefault(),
                         "%02d시간 %02d분 %02d초", h, m, s);
             }
 
             if (isEdit) {
-                if (isDelete) {
-                    if (index >= 0 && index < timerAlarms.size()) {
-                        timerAlarms.remove(index);
+                if (index >= 0 && index < timerAlarms.size()) {
+                    if (index < timerTimers.size()) {
+                        CountDownTimer oldTimer = timerTimers.get(index);
+                        if (oldTimer != null) oldTimer.cancel();
+                        timerTimers.remove(index);
                     }
-                } else {
-                    if (index >= 0 && index < timerAlarms.size()) {
-                        timerAlarms.set(index, displayText);
+                    if (index < timerRemainingMillis.size()) {
+                        timerRemainingMillis.remove(index);
+                    }
+                    if (isDelete) {
+                        timerAlarms.remove(index);
+                    } else {
+                        timerAlarms.remove(index);
+                        addNewTimer(totalMillis, displayText);
                     }
                 }
             } else {
-                timerAlarms.add(displayText);
+                addNewTimer(totalMillis, displayText);
             }
 
             timerAdapter.notifyDataSetChanged();
