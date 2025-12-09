@@ -68,6 +68,12 @@
 
         </LinearLayout>
 
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="4dp"
+            android:background="@color/button_stroke" />
+
         <ListView
             android:id="@+id/listClockAlarm"
             android:layout_width="match_parent"
@@ -119,6 +125,12 @@
                 android:contentDescription="타이머 알람 추가" />
 
         </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginTop="4dp"
+            android:background="@color/button_stroke" />
 
         <ListView
             android:id="@+id/listTimerAlarm"
