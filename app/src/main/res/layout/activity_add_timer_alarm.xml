@@ -247,4 +247,22 @@
             android:background="@color/button_stroke" />
     </LinearLayout>
 
+    <Button
+        android:id="@+id/btnDeleteTimer"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="32dp"
+        android:layout_marginTop="48dp"
+        android:layout_marginBottom="32dp"
+        android:text="알람 삭제"
+        android:textSize="16sp"
+        android:textColor="@color/btn_delete"
+        android:background="@drawable/btn_delete"
+
+        app:backgroundTint="@null"
+        app:layout_constraintTop_toBottomOf="@id/layoutOptions"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

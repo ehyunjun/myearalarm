@@ -6,4 +6,6 @@
     <color name="button_stroke">#B0B0B0</color>
     <color name="button_text">#000000</color>
     <color name="btn_add_alarm">#616161</color>
+    <color name="btn_delete">#D32F2F</color>
+
 </resources>

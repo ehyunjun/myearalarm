@@ -116,7 +116,7 @@
                 android:paddingBottom="4dp" />
 
             <ImageButton
-                android:id="@+id/btnTimerAlarm"
+                android:id="@+id/btnAddTimerAlarm"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:src="@android:drawable/ic_input_add"

@@ -15,4 +15,6 @@
     android:paddingStart="24dp"
     android:paddingTop="12dp"
     android:paddingBottom="12dp"
-    android:text="시간 알람 샘플" />
+    android:clickable="false"
+    android:focusable="false"
+    android:focusableInTouchMode="false" />
