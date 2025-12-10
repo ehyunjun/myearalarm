@@ -10,6 +10,8 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.os.Handler;
+import android.os.Looper;
 import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.ListView;
@@ -48,15 +50,21 @@ public class MainActivity extends AppCompatActivity {
     // 시간 알람마다 고유 알람 ID 저장
     private final ArrayList<Integer> clockAlarmIds = new ArrayList<>();
 
+    // 알람들 반복 여부
+    private final ArrayList<Boolean> clockRepeatFlags = new ArrayList<>();
+    private final ArrayList<Boolean> timerRepeatFlags = new ArrayList<>();
+
+
 
     private ArrayAdapter<String> clockAdapter;
     private ArrayAdapter<String> timerAdapter;
 
     // 새 타이머 추가 + CountDownTimer 시작
-    private void addNewTimer(long totalMillis, String initialText, String soundUri) {
+    private void addNewTimer(long totalMillis, String initialText, String soundUri,boolean repeat) {
         timerAlarms.add(initialText);
         timerRemainingMillis.add(totalMillis);
-        timerSoundUris.add(soundUri);    // 사운드도 같이 저장
+        timerSoundUris.add(soundUri);
+        timerRepeatFlags.add(repeat);
 
         CountDownTimer timer = new CountDownTimer(totalMillis, 1000) {
             @Override
@@ -92,6 +100,20 @@ public class MainActivity extends AppCompatActivity {
                         "타이머 알람이 종료되었습니다.", Toast.LENGTH_SHORT).show();
 
                 playerTimerAlarmSound(idx);
+
+                boolean repeatFlag =
+                        (idx < timerRepeatFlags.size() && Boolean.TRUE.equals(timerRepeatFlags.get(idx)));
+                if (repeatFlag) {
+                    long snoozeMillis = 5 * 60 * 1000L;
+                    new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                        if (idx >= 0 && idx < timerAlarms.size()) {
+                            Toast.makeText(MainActivity.this,
+                                    "반복 알람입니다.",
+                                    Toast.LENGTH_SHORT).show();
+                            playerTimerAlarmSound(idx);
+                        }
+                    }, snoozeMillis);
+                }
             }
         };
 
@@ -128,7 +150,8 @@ public class MainActivity extends AppCompatActivity {
     // 특정 시간에 시간 알람 예약
     // 특정 시간에 시간 알람 예약
     private void scheduleClockAlarm(long triggerAtMillis, int alarmId,
-                                    String displayText, String soundUri) {
+                                    String displayText, String soundUri,
+                                    boolean repeat) {
         AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
         if (alarmManager == null) return;
 
@@ -136,6 +159,7 @@ public class MainActivity extends AppCompatActivity {
         intent.putExtra("alarmId", alarmId);
         intent.putExtra("timeText", displayText);
         intent.putExtra("soundUri", soundUri);
+        intent.putExtra("repeat", repeat);
 
         PendingIntent pendingIntent = PendingIntent.getBroadcast(
                 this,
@@ -294,6 +318,11 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
 
+            // 이 시간 알람의 반복 여부도 같이 넘김
+            if (position < clockRepeatFlags.size()) {
+                boolean repeat = clockRepeatFlags.get(position);
+                intent.putExtra("repeat", repeat);
+            }
             startActivityForResult(intent, REQ_ADD_CLOCK);
         });
 
@@ -315,6 +344,11 @@ public class MainActivity extends AppCompatActivity {
                 if (soundUri != null && !soundUri.isEmpty()) {
                     intent.putExtra("soundUri", soundUri);
                 }
+            }
+            // 이 타이머 알람의 반복 여부도 같이 넘김
+            if (position < timerRepeatFlags.size()); {
+                boolean repeat = timerRepeatFlags.get(position);
+                intent.putExtra("repeat", repeat);
             }
 
             startActivityForResult(intent, REQ_ADD_TIMER);
@@ -339,6 +373,8 @@ public class MainActivity extends AppCompatActivity {
 
             // 사운드 URI
             String soundUri = data.getStringExtra("soundUri");
+            // 반복 여부
+            boolean repeat = data.getBooleanExtra("repeat", true);
 
             // 표시용 텍스트가 없으면 ampm/hour/minute 로 만들어주기
             if (displayText == null) {
@@ -390,6 +426,9 @@ public class MainActivity extends AppCompatActivity {
                         if (index < clockAlarmIds.size()) {
                             clockAlarmIds.remove(index);
                         }
+                        if (index < clockRepeatFlags.size()) {
+                            clockRepeatFlags.remove(index);
+                        }
 
                     } else {
                         // 수정
@@ -410,6 +449,12 @@ public class MainActivity extends AppCompatActivity {
                                 clockSoundUris.add("");
                             }
                         }
+                        // 반복 여부 갱신
+                        if (index < clockRepeatFlags.size()) {
+                            clockRepeatFlags.set(index, repeat);
+                        } else {
+                            clockRepeatFlags.add(repeat);
+                        }
 
                         // 새 알람 ID 만들어서 저장 & 예약
                         int newAlarmId = (int) System.currentTimeMillis();
@@ -419,7 +464,7 @@ public class MainActivity extends AppCompatActivity {
                             clockAlarmIds.add(newAlarmId);
                         }
 
-                        scheduleClockAlarm(triggerAtMillis, newAlarmId, displayText, soundUri);
+                        scheduleClockAlarm(triggerAtMillis, newAlarmId, displayText, soundUri, repeat);
                     }
                 }
 
@@ -428,11 +473,12 @@ public class MainActivity extends AppCompatActivity {
 
                 clockAlarms.add(displayText);
                 clockSoundUris.add(soundUri);
+                clockRepeatFlags.add(repeat);
 
                 int alarmId = (int) System.currentTimeMillis();
                 clockAlarmIds.add(alarmId);
 
-                scheduleClockAlarm(triggerAtMillis, alarmId, displayText, soundUri);
+                scheduleClockAlarm(triggerAtMillis, alarmId, displayText, soundUri, repeat);
             }
 
             clockAdapter.notifyDataSetChanged();
@@ -444,6 +490,8 @@ public class MainActivity extends AppCompatActivity {
             int m = data.getIntExtra("minute", 0);
             int s = data.getIntExtra("second", 0);
             String soundUri = data.getStringExtra("soundUri");
+            boolean repeat = data.getBooleanExtra("repeat", true);
+
 
             long totalMillis = (h * 3600L + m * 60L + s) * 1000L;
 
@@ -466,6 +514,9 @@ public class MainActivity extends AppCompatActivity {
                     if (index < timerSoundUris.size()) {
                         timerSoundUris.remove(index);
                     }
+                    if (index < timerRepeatFlags.size()) {
+                        timerRepeatFlags.remove(index);
+                    }
 
                     if (isDelete) {
                         // 삭제
@@ -473,12 +524,12 @@ public class MainActivity extends AppCompatActivity {
                     } else {
                         // 수정 후 새 타이머로 교체
                         timerAlarms.remove(index);
-                        addNewTimer(totalMillis, displayText, soundUri);
+                        addNewTimer(totalMillis, displayText, soundUri, repeat);
                     }
                 }
             } else {
                 // 새 타이머 추가
-                addNewTimer(totalMillis, displayText, soundUri);
+                addNewTimer(totalMillis, displayText, soundUri, repeat);
             }
 
             timerAdapter.notifyDataSetChanged();

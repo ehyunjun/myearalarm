@@ -11,6 +11,7 @@ import android.widget.NumberPicker;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SwitchCompat;
 
 import java.util.Locale;
 
@@ -19,6 +20,8 @@ public class AddClockAlarmActivity extends AppCompatActivity {
     private NumberPicker npAmPm, npHour, npMinute;
     private Button btnCancelClock, btnSetClock, btnDeleteClock;
     private TextView tvClockTitle, tvSound;
+    private SwitchCompat switchRepeat, switchSafeMode;
+
     private boolean isEdit = false;
     private int editIndex=-1;
     private String selectedSoundUri;
@@ -35,6 +38,9 @@ public class AddClockAlarmActivity extends AppCompatActivity {
         btnDeleteClock = findViewById(R.id.btnDeleteClock);
         btnSetClock = findViewById(R.id.btnSetClock);
         btnCancelClock = findViewById(R.id.btnCancelClock);
+        switchRepeat = findViewById(R.id.switchRepeat);
+        switchSafeMode = findViewById(R.id.switchSafeMode);
+
 
         npAmPm = findViewById(R.id.npAmPm);
         npHour = findViewById(R.id.npHour);
@@ -50,6 +56,9 @@ public class AddClockAlarmActivity extends AppCompatActivity {
         Intent intent = getIntent();
         isEdit = intent.getBooleanExtra("isEdit", false);
         editIndex = intent.getIntExtra("index", -1);
+
+        boolean repeatFromIntent = intent.getBooleanExtra("repeat", true);
+        switchRepeat.setChecked(repeatFromIntent);
 
         String defaultUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
                 .toString();
@@ -85,6 +94,7 @@ public class AddClockAlarmActivity extends AppCompatActivity {
             result.putExtra("isEdit", true);
             result.putExtra("index", editIndex);
             result.putExtra("isDelete", true);
+            result.putExtra("repeat", switchRepeat.isChecked());
             setResult(RESULT_OK, result);
             finish();
         });
@@ -100,6 +110,8 @@ public class AddClockAlarmActivity extends AppCompatActivity {
             String displayText = String.format(Locale.getDefault(),
                     "%s %02d:%02d", ampmText, hour, minute);
 
+            boolean repeat = switchRepeat.isChecked();
+
             Intent result = new Intent();
             result.putExtra("ampm", ampm);
             result.putExtra("hour", hour);
@@ -111,6 +123,9 @@ public class AddClockAlarmActivity extends AppCompatActivity {
             result.putExtra("isEdit", isEdit);
             result.putExtra("index", editIndex);
             result.putExtra("isDelete", false);
+
+            result.putExtra("repeat", repeat);
+
 
             setResult(RESULT_OK, result);
             finish();

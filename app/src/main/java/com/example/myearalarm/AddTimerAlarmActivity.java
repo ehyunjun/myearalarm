@@ -11,6 +11,7 @@ import android.widget.NumberPicker;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SwitchCompat;
 
 import java.util.Locale;
 
@@ -22,6 +23,7 @@ public class AddTimerAlarmActivity extends AppCompatActivity {
     private int editIndex = -1;
     private String selectedSoundUri;
     private static final int REQ_PICK_SOUND = 2001;
+    private SwitchCompat switchRepeat, switchSafeMode;
 
     @Override
 
@@ -41,6 +43,9 @@ public class AddTimerAlarmActivity extends AppCompatActivity {
         tvSound = findViewById(R.id.tvSound);
         View rowSound = findViewById(R.id.rowSound);
 
+        switchRepeat = findViewById(R.id.switchRepeat);
+        switchSafeMode = findViewById(R.id.switchSafeMode);
+
 
         setupNumberPickers(npHour, 0, 23);
         setupNumberPickers(npMinute, 0, 59);
@@ -49,6 +54,9 @@ public class AddTimerAlarmActivity extends AppCompatActivity {
         Intent intent = getIntent();
         isEdit = intent.getBooleanExtra("isEdit", false);
         editIndex = intent.getIntExtra("index", -1);
+
+        boolean repeatFromIntent = intent.getBooleanExtra("repeat", true);
+        switchRepeat.setChecked(repeatFromIntent);
 
         String defaultUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
                 .toString();
@@ -88,6 +96,7 @@ public class AddTimerAlarmActivity extends AppCompatActivity {
             result.putExtra("isEdit", true);
             result.putExtra("index", editIndex);
             result.putExtra("isDelete", true);
+            result.putExtra("repeat", switchRepeat.isChecked());
 
             setResult(RESULT_OK, result);
             finish();
@@ -103,6 +112,8 @@ public class AddTimerAlarmActivity extends AppCompatActivity {
             String displayText = String.format(Locale.getDefault(),
                     "%02d시간 %02d분 %02d초", h, m, s);
 
+            boolean repeat = switchRepeat.isChecked();
+
             Intent result = new Intent();
             result.putExtra("hour", h);
             result.putExtra("minute", m);
@@ -114,6 +125,8 @@ public class AddTimerAlarmActivity extends AppCompatActivity {
             result.putExtra("isEdit", isEdit);
             result.putExtra("index", editIndex);
             result.putExtra("isDelete", false);
+
+            result.putExtra("repeat", repeat);
 
             setResult(RESULT_OK, result);
             finish();
