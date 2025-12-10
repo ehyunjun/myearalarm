@@ -21,20 +21,31 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int REQ_ADD_CLOCK = 1001;
     private static final int REQ_ADD_TIMER = 1002;
+
     private ImageButton btnAddClockAlarm;
     private ImageButton btnAddTimerAlarm;
     private ListView listClockAlarm;
     private ListView listTimerAlarm;
-    private ArrayList<String> clockAlarms = new ArrayList<>();
-    private ArrayList<String> timerAlarms = new ArrayList<>();
+
+    // ── 리스트 데이터 ───────────────────────────────
+    private final ArrayList<String> clockAlarms = new ArrayList<>();
+    private final ArrayList<String> timerAlarms = new ArrayList<>();
+
+    // 각 타이머의 남은 시간 / 타이머 객체 / 타이머 알람 사운드 URI / 시간 알람 사운드 URI
+    private final ArrayList<Long> timerRemainingMillis = new ArrayList<>();
+    private final ArrayList<CountDownTimer> timerTimers = new ArrayList<>();
+    private final ArrayList<String> timerSoundUris = new ArrayList<>();
+    private final ArrayList<String> clockSoundUris = new ArrayList<>();
+
+
     private ArrayAdapter<String> clockAdapter;
     private ArrayAdapter<String> timerAdapter;
-    private ArrayList<Long> timerRemainingMillis = new ArrayList<>();
-    private ArrayList<android.os.CountDownTimer> timerTimers = new ArrayList<>();
 
-    private void addNewTimer(long totalMillis, String initialText) {
+    // 새 타이머 추가 + CountDownTimer 시작
+    private void addNewTimer(long totalMillis, String initialText, String soundUri) {
         timerAlarms.add(initialText);
         timerRemainingMillis.add(totalMillis);
+        timerSoundUris.add(soundUri);    // 사운드도 같이 저장
 
         CountDownTimer timer = new CountDownTimer(totalMillis, 1000) {
             @Override
@@ -68,13 +79,14 @@ public class MainActivity extends AppCompatActivity {
 
                 Toast.makeText(MainActivity.this,
                         "타이머 알람이 종료되었습니다.", Toast.LENGTH_SHORT).show();
+
+                // 나중에 여기서 timerSoundUris.get(idx) 로 벨소리 재생하면 됨
             }
         };
 
         timerTimers.add(timer);
         timer.start();
     }
-
 
 
     @Override
@@ -87,11 +99,13 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
+
         btnAddClockAlarm = findViewById(R.id.btnAddClockAlarm);
         btnAddTimerAlarm = findViewById(R.id.btnAddTimerAlarm);
-        listClockAlarm = findViewById(R.id.listClockAlarm);
-        listTimerAlarm = findViewById(R.id.listTimerAlarm);
+        listClockAlarm   = findViewById(R.id.listClockAlarm);
+        listTimerAlarm   = findViewById(R.id.listTimerAlarm);
 
+        // + 버튼들
         btnAddClockAlarm.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, AddClockAlarmActivity.class);
             startActivityForResult(intent, REQ_ADD_CLOCK);
@@ -102,6 +116,7 @@ public class MainActivity extends AppCompatActivity {
             startActivityForResult(intent, REQ_ADD_TIMER);
         });
 
+        // 어댑터
         clockAdapter = new ArrayAdapter<>(
                 this, R.layout.item_clock_alarm,
                 R.id.btnClockAlarmItem, clockAlarms
@@ -114,6 +129,7 @@ public class MainActivity extends AppCompatActivity {
         );
         listTimerAlarm.setAdapter(timerAdapter);
 
+        // 시간 알람 아이템 클릭 -> 편집 모드로 열기
         listClockAlarm.setOnItemClickListener((parent, view, position, id) -> {
             String display = clockAlarms.get(position);
             int[] values = parseClockDisplay(display);
@@ -124,8 +140,19 @@ public class MainActivity extends AppCompatActivity {
             intent.putExtra("ampm", values[0]);
             intent.putExtra("hour", values[1]);
             intent.putExtra("minute", values[2]);
+
+            // 이 시간 알람의 사운드 URI도 같이 넘김
+            if (position < clockSoundUris.size()) {
+                String soundUri = clockSoundUris.get(position);
+                if (soundUri != null && !soundUri.isEmpty()) {
+                    intent.putExtra("soundUri", soundUri);
+                }
+            }
+
             startActivityForResult(intent, REQ_ADD_CLOCK);
         });
+
+        // 타이머 알람 아이템 클릭 -> 편집 모드로 열기
         listTimerAlarm.setOnItemClickListener((parent, view, position, id) -> {
             String display = timerAlarms.get(position);
             int[] values = parseTimerDisplay(display);
@@ -136,9 +163,20 @@ public class MainActivity extends AppCompatActivity {
             intent.putExtra("minute", values[1]);
             intent.putExtra("second", values[2]);
             intent.putExtra("index", position);
+
+            // 이 타이머 알람의 사운드 URI 도 같이 넘김
+            if (position < timerSoundUris.size()) {
+                String soundUri = timerSoundUris.get(position);
+                if (soundUri != null && !soundUri.isEmpty()) {
+                    intent.putExtra("soundUri", soundUri);
+                }
+            }
+
             startActivityForResult(intent, REQ_ADD_TIMER);
         });
     }
+
+    // 자식 액티비티(추가/편집 화면)에서 결과 받기
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -147,51 +185,68 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        boolean isEdit = data.getBooleanExtra("isEdit", false);
+        boolean isEdit   = data.getBooleanExtra("isEdit", false);
         boolean isDelete = data.getBooleanExtra("isDelete", false);
-        int index = data.getIntExtra("index", -1);
+        int index        = data.getIntExtra("index", -1);
         String displayText = data.getStringExtra("displayText");
 
+        // 시간 알람
         if (requestCode == REQ_ADD_CLOCK) {
+            String soundUri = data.getStringExtra("soundUri");
+
             if (displayText == null) {
                 int ampm = data.getIntExtra("ampm", 0);
                 int hour = data.getIntExtra("hour", 0);
                 int minute = data.getIntExtra("minute", 0);
                 String ampmStr = (ampm == 0) ? "오전" : "오후";
-                displayText = String.format(Locale.getDefault(),
-                        "%s %02d:%02d", ampmStr, hour, minute);
+                displayText = String.format(
+                        Locale.getDefault(), "%s %02d:%02d", ampmStr, hour, minute);
             }
 
             if (isEdit) {
-                if (isDelete) {
-                    if (index >= 0 && index < clockAlarms.size()) {
+                if (index >= 0 && index < clockAlarms.size()) {
+                    if (isDelete) {
+                        // 삭제
                         clockAlarms.remove(index);
-                    }
-                } else {
-                    if (index >= 0 && index < clockAlarms.size()) {
+                        if (index < clockSoundUris.size()) {
+                            clockSoundUris.remove(index);
+                        }
+                    } else {
+                        // 수정
                         clockAlarms.set(index, displayText);
+
+                        if (index < clockSoundUris.size()) {
+                            clockSoundUris.set(index, soundUri);
+                        } else {
+                            clockSoundUris.add(soundUri);
+                        }
                     }
                 }
             } else {
+                // 새 알람 추가
                 clockAlarms.add(displayText);
+                clockSoundUris.add(soundUri);
             }
 
             clockAdapter.notifyDataSetChanged();
 
         } else if (requestCode == REQ_ADD_TIMER) {
+            // 타이머 알람
             int h = data.getIntExtra("hour", 0);
             int m = data.getIntExtra("minute", 0);
             int s = data.getIntExtra("second", 0);
+            String soundUri = data.getStringExtra("soundUri");
 
-            long totalMillis = (h * 3600 + m * 60 + s) * 1000L;
+            long totalMillis = (h * 3600L + m * 60L + s) * 1000L;
 
             if (displayText == null) {
-                displayText = String.format(Locale.getDefault(),
-                        "%02d시간 %02d분 %02d초", h, m, s);
+                displayText = String.format(
+                        Locale.getDefault(), "%02d시간 %02d분 %02d초", h, m, s);
             }
 
             if (isEdit) {
                 if (index >= 0 && index < timerAlarms.size()) {
+                    // 기존 타이머 정리
                     if (index < timerTimers.size()) {
                         CountDownTimer oldTimer = timerTimers.get(index);
                         if (oldTimer != null) oldTimer.cancel();
@@ -200,22 +255,29 @@ public class MainActivity extends AppCompatActivity {
                     if (index < timerRemainingMillis.size()) {
                         timerRemainingMillis.remove(index);
                     }
+                    if (index < timerSoundUris.size()) {
+                        timerSoundUris.remove(index);
+                    }
+
                     if (isDelete) {
+                        // 삭제
                         timerAlarms.remove(index);
                     } else {
+                        // 수정
                         timerAlarms.remove(index);
-                        addNewTimer(totalMillis, displayText);
+                        addNewTimer(totalMillis, displayText, soundUri);
                     }
                 }
             } else {
-                addNewTimer(totalMillis, displayText);
+                // 새 타이머 추가
+                addNewTimer(totalMillis, displayText, soundUri);
             }
 
             timerAdapter.notifyDataSetChanged();
         }
     }
 
-
+    // 시간 알람 문자열 파싱 : "오전 07:30"
     private int[] parseClockDisplay(String text) {
         int ampm = text.startsWith("오전") ? 0 : 1;
 
@@ -229,6 +291,7 @@ public class MainActivity extends AppCompatActivity {
         return new int[]{ampm, hour, minute};
     }
 
+    // 타이머 문자열 파싱 : "00시간 05분 00초"
     private int[] parseTimerDisplay(String text) {
         String[] tokens = text.split(" ");
         int h = extractNumber(tokens[0]);

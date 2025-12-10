@@ -176,12 +176,23 @@
             android:paddingBottom="12dp">
 
             <TextView
-                android:id="@+id/tvSound"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:text="사운드"
                 android:textSize="16sp"
                 android:textColor="@color/button_text" />
+
+            <TextView
+                android:id="@+id/tvSound"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="기본값"
+                android:textSize="16sp"
+                android:textColor="@color/btn_add_alarm"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:layout_marginEnd="4dp" />
 
         </LinearLayout>
 
