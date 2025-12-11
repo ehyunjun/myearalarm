@@ -96,24 +96,17 @@ public class MainActivity extends AppCompatActivity {
                 timerAlarms.set(idx, text);
                 timerAdapter.notifyDataSetChanged();
 
-                Toast.makeText(MainActivity.this,
-                        "타이머 알람이 종료되었습니다.", Toast.LENGTH_SHORT).show();
-
-                playerTimerAlarmSound(idx);
-
+                Intent alertIntent = new Intent(MainActivity.this, AlarmAlertActivity.class);
+                alertIntent.putExtra("alarmId", -1);
+                alertIntent.putExtra("timeText", initialText);
+                String uriForThisTimer =
+                        (idx < timerSoundUris.size()) ? timerSoundUris.get(idx) : null;
+                alertIntent.putExtra("soundUri", uriForThisTimer);
                 boolean repeatFlag =
                         (idx < timerRepeatFlags.size() && Boolean.TRUE.equals(timerRepeatFlags.get(idx)));
-                if (repeatFlag) {
-                    long snoozeMillis = 5 * 60 * 1000L;
-                    new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                        if (idx >= 0 && idx < timerAlarms.size()) {
-                            Toast.makeText(MainActivity.this,
-                                    "반복 알람입니다.",
-                                    Toast.LENGTH_SHORT).show();
-                            playerTimerAlarmSound(idx);
-                        }
-                    }, snoozeMillis);
-                }
+                alertIntent.putExtra("repeat", repeatFlag);
+                alertIntent.putExtra("isTimer", true);
+                startActivity(alertIntent);
             }
         };
 
@@ -160,6 +153,7 @@ public class MainActivity extends AppCompatActivity {
         intent.putExtra("timeText", displayText);
         intent.putExtra("soundUri", soundUri);
         intent.putExtra("repeat", repeat);
+        intent.putExtra("isTimer", false);
 
         PendingIntent pendingIntent = PendingIntent.getBroadcast(
                 this,
@@ -228,35 +222,6 @@ public class MainActivity extends AppCompatActivity {
         alarmManager.cancel(pendingIntent);
     }
 
-    // 타이머가 끝났을 때 인덱스로 사운드를 재생
-    private void playerTimerAlarmSound(int index) {
-        if (index < 0 || index >= timerSoundUris.size()) {
-            return;
-        }
-
-        String uriString = timerSoundUris.get(index);
-        Uri uri = null;
-
-        // 사용자가 선택한 사운드 URI가 있으면 사용
-        if (uriString != null && !uriString.isEmpty()) {
-            uri = Uri.parse(uriString);
-        }
-
-        // 없으면 기본 알람음 사용
-        if (uri == null) {
-            uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
-            if (uri == null) {
-                uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-            }
-        }
-
-        if (uri != null) {
-            Ringtone ringtone = RingtoneManager.getRingtone(getApplicationContext(), uri);
-            if (ringtone !=null) {
-                ringtone.play();
-            }
-        }
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -346,7 +311,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
             // 이 타이머 알람의 반복 여부도 같이 넘김
-            if (position < timerRepeatFlags.size()); {
+            if (position < timerRepeatFlags.size()) {
                 boolean repeat = timerRepeatFlags.get(position);
                 intent.putExtra("repeat", repeat);
             }
