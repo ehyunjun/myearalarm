@@ -13,7 +13,9 @@
         android:theme="@style/Theme.MyEarAlarm">
         <activity android:name=".AddClockAlarmActivity" />
         <activity android:name=".AddTimerAlarmActivity" />
-        <activity android:name=".AlarmAlertActivity" />
+        <activity android:name=".AlarmAlertActivity"
+                  android:exported="false"
+                  android:theme="@style/Theme.MyEarAlarm.AlarmAlert" />
         <receiver android:name=".AlarmReceiver"
                   android:enabled="true"
                   android:exported="false" />

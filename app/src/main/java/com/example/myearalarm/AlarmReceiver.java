@@ -21,8 +21,9 @@ public class AlarmReceiver extends BroadcastReceiver {
         alertIntent.putExtra("isTimer", isTimer);
 
         alertIntent.addFlags(
-                Intent.FLAG_ACTIVITY_NEW_TASK |
-                Intent.FLAG_ACTIVITY_SINGLE_TOP
+                Intent.FLAG_ACTIVITY_NEW_TASK
+                | Intent.FLAG_ACTIVITY_CLEAR_TOP
+                | Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
         );
         context.startActivity(alertIntent);
     }

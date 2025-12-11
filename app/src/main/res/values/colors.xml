@@ -7,5 +7,6 @@
     <color name="button_text">#000000</color>
     <color name="btn_add_alarm">#616161</color>
     <color name="btn_delete">#D32F2F</color>
+    <color name="alarm_dim_bg">#80000000</color>
 
 </resources>

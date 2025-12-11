@@ -13,6 +13,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -58,6 +59,7 @@ public class AlarmAlertActivity extends AppCompatActivity {
             if (!userStopped && hasRepeat) {
                 scheduleSnooze();
             }
+            returnToMainIfNeeded();
             finish();
         };
         handler.postDelayed(autoStopRunnable, 60_000L);
@@ -66,6 +68,7 @@ public class AlarmAlertActivity extends AppCompatActivity {
             userStopped = true;
             handler.removeCallbacks(autoStopRunnable);
             stopRingtoneIfNeeded();
+            returnToMainIfNeeded();
             finish();
         });
         btnSnooze.setOnClickListener(v -> {
@@ -73,6 +76,7 @@ public class AlarmAlertActivity extends AppCompatActivity {
             handler.removeCallbacks(autoStopRunnable);
             stopRingtoneIfNeeded();
             scheduleSnooze();
+            returnToMainIfNeeded();
             finish();
         });
     }
@@ -144,6 +148,15 @@ public class AlarmAlertActivity extends AppCompatActivity {
                     pendingIntent
             );
         }
+    }
+    private void returnToMainIfNeeded() {
+        Intent mainIntent = new Intent(this, MainActivity.class);
+        mainIntent.addFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK
+                        | Intent.FLAG_ACTIVITY_CLEAR_TOP
+                        | Intent.FLAG_ACTIVITY_SINGLE_TOP
+        );
+        startActivity(mainIntent);
     }
 
     @Override
