@@ -13,22 +13,23 @@ import android.os.Handler;
 import android.os.Looper;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 public class AlarmAlertActivity extends AppCompatActivity {
+
     private Ringtone ringtone;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private Runnable autoStopRunnable;
 
     private int alarmId = -1;
+    private int timerIndex = -1;
     private boolean isTimer = false;
     private boolean hasRepeat = false;
-    private String soundUriStr, timeText;
+    private String soundUriStr;
+    private String timeText;
 
     private boolean userStopped = false;
-    private boolean userSnoozed = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +42,7 @@ public class AlarmAlertActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         alarmId = intent.getIntExtra("alarmId", -1);
+        timerIndex = intent.getIntExtra("timerIndex", -1);
         isTimer = intent.getBooleanExtra("isTimer", false);
         hasRepeat = intent.getBooleanExtra("repeat", false);
         soundUriStr = intent.getStringExtra("soundUri");
@@ -51,32 +53,36 @@ public class AlarmAlertActivity extends AppCompatActivity {
         } else {
             tvTitle.setText("알람");
         }
+
         startRingtone();
 
         autoStopRunnable = () -> {
             stopRingtoneIfNeeded();
 
             if (!userStopped && hasRepeat) {
-                scheduleSnooze();
+                long snoozeEndTime = scheduleSnooze();
+                returnToMainAfterSnooze(snoozeEndTime);
+            } else {
+                returnToMainNormal();
             }
-            returnToMainIfNeeded();
             finish();
         };
+
         handler.postDelayed(autoStopRunnable, 60_000L);
 
         btnStop.setOnClickListener(v -> {
             userStopped = true;
             handler.removeCallbacks(autoStopRunnable);
             stopRingtoneIfNeeded();
-            returnToMainIfNeeded();
+            returnToMainAfterStopDelete();
             finish();
         });
+
         btnSnooze.setOnClickListener(v -> {
-            userSnoozed = true;
             handler.removeCallbacks(autoStopRunnable);
             stopRingtoneIfNeeded();
-            scheduleSnooze();
-            returnToMainIfNeeded();
+            long snoozeEndTime = scheduleSnooze();
+            returnToMainAfterSnooze(snoozeEndTime);
             finish();
         });
     }
@@ -109,9 +115,9 @@ public class AlarmAlertActivity extends AppCompatActivity {
         }
     }
 
-    private void scheduleSnooze() {
+    private long scheduleSnooze() {
         AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        if (alarmManager == null) return;
+        if (alarmManager == null) return 0L;
 
         int requestCode = (alarmId != -1) ? alarmId : (int) System.currentTimeMillis();
 
@@ -121,35 +127,70 @@ public class AlarmAlertActivity extends AppCompatActivity {
         intent.putExtra("soundUri", soundUriStr);
         intent.putExtra("repeat", hasRepeat);
         intent.putExtra("isTimer", isTimer);
+        intent.putExtra("timerIndex", timerIndex);
 
         PendingIntent pendingIntent = PendingIntent.getBroadcast(
-                this, requestCode, intent,
+                this,
+                requestCode,
+                intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
         long triggerAtMillis = System.currentTimeMillis() + 5 * 60 * 1000L;
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            alarmManager.setExactAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP,
-                    triggerAtMillis,
-                    pendingIntent
-            );
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            alarmManager.setExact(
-                    AlarmManager.RTC_WAKEUP,
-                    triggerAtMillis,
-                    pendingIntent
-            );
-        } else {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (alarmManager.canScheduleExactAlarms()) {
+                    alarmManager.setExactAndAllowWhileIdle(
+                            AlarmManager.RTC_WAKEUP,
+                            triggerAtMillis,
+                            pendingIntent
+                    );
+                } else {
+                    alarmManager.set(
+                            AlarmManager.RTC_WAKEUP,
+                            triggerAtMillis,
+                            pendingIntent
+                    );
+                }
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarmManager.setExactAndAllowWhileIdle(
+                        AlarmManager.RTC_WAKEUP,
+                        triggerAtMillis,
+                        pendingIntent
+                );
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                alarmManager.setExact(
+                        AlarmManager.RTC_WAKEUP,
+                        triggerAtMillis,
+                        pendingIntent
+                );
+            } else {
+                alarmManager.set(
+                        AlarmManager.RTC_WAKEUP,
+                        triggerAtMillis,
+                        pendingIntent
+                );
+            }
+        } catch (SecurityException e) {
             alarmManager.set(
                     AlarmManager.RTC_WAKEUP,
                     triggerAtMillis,
                     pendingIntent
             );
         }
+
+        return triggerAtMillis;
     }
-    private void returnToMainIfNeeded() {
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        handler.removeCallbacks(autoStopRunnable);
+        stopRingtoneIfNeeded();
+    }
+
+    private void returnToMainNormal() {
         Intent mainIntent = new Intent(this, MainActivity.class);
         mainIntent.addFlags(
                 Intent.FLAG_ACTIVITY_NEW_TASK
@@ -159,10 +200,32 @@ public class AlarmAlertActivity extends AppCompatActivity {
         startActivity(mainIntent);
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        handler.removeCallbacks(autoStopRunnable);
-        stopRingtoneIfNeeded();
+    private void returnToMainAfterStopDelete() {
+        Intent mainIntent = new Intent(this, MainActivity.class);
+        mainIntent.addFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK
+                        | Intent.FLAG_ACTIVITY_CLEAR_TOP
+                        | Intent.FLAG_ACTIVITY_SINGLE_TOP
+        );
+        mainIntent.putExtra("deleteFromAlert", true);
+        mainIntent.putExtra("isTimer", isTimer);
+        mainIntent.putExtra("timeText", timeText);
+        mainIntent.putExtra("timerIndex", timerIndex);
+        startActivity(mainIntent);
+    }
+
+    private void returnToMainAfterSnooze(long snoozeEndTime) {
+        Intent mainIntent = new Intent(this, MainActivity.class);
+        mainIntent.addFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK
+                        | Intent.FLAG_ACTIVITY_CLEAR_TOP
+                        | Intent.FLAG_ACTIVITY_SINGLE_TOP
+        );
+        mainIntent.putExtra("updateSnoozeUI", true);
+        mainIntent.putExtra("isTimer", isTimer);
+        mainIntent.putExtra("timeText", timeText);
+        mainIntent.putExtra("timerIndex", timerIndex);
+        mainIntent.putExtra("snoozeEndTime", snoozeEndTime);
+        startActivity(mainIntent);
     }
 }
