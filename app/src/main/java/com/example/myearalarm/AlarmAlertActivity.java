@@ -4,7 +4,8 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.media.Ringtone;
+import android.media.AudioAttributes;
+import android.media.MediaPlayer;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
@@ -13,15 +14,16 @@ import android.os.Handler;
 import android.os.Looper;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 public class AlarmAlertActivity extends AppCompatActivity {
 
-    private Ringtone ringtone;
+    private MediaPlayer player;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private Runnable autoStopRunnable;
-
+    private boolean lastEarConnected = false;
     private int alarmId = -1;
     private int timerIndex = -1;
     private boolean isTimer = false;
@@ -37,7 +39,6 @@ public class AlarmAlertActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_alarm_alert);
 
-        TextView tvTitle = findViewById(R.id.tvAlertTitle);
         Button btnSnooze = findViewById(R.id.btnSnooze);
         Button btnStop = findViewById(R.id.btnStop);
 
@@ -50,28 +51,24 @@ public class AlarmAlertActivity extends AppCompatActivity {
         timeText = intent.getStringExtra("timeText");
         safeMode = intent.getBooleanExtra("safeMode", false);
 
+        lastEarConnected = isEarphoneOutputConnected();
 
-        if (timeText != null && !timeText.isEmpty()) {
-            tvTitle.setText("알람 (" + timeText + ")");
-        } else {
-            tvTitle.setText("알람");
-        }
-        if (safeMode && !isEarphoneOutputConnected()) {
+        if (safeMode && !lastEarConnected) {
+            Toast.makeText(this, "이어폰이 없어 알람이 삭제(안전모드)", Toast.LENGTH_SHORT).show();
             returnToMainAfterStopDelete();
             finish();
             return;
         }
 
+        startPlayer();
 
-        startRingtone();
 
         if (safeMode) {
             handler.post(safeModeWatch);
         }
 
-
         autoStopRunnable = () -> {
-            stopRingtoneIfNeeded();
+            stopPlayerIfNeeded();
 
             if (!userStopped && hasRepeat) {
                 long snoozeEndTime = scheduleSnooze();
@@ -87,14 +84,16 @@ public class AlarmAlertActivity extends AppCompatActivity {
         btnStop.setOnClickListener(v -> {
             userStopped = true;
             handler.removeCallbacks(autoStopRunnable);
-            stopRingtoneIfNeeded();
+            handler.removeCallbacks(safeModeWatch);
+            stopPlayerIfNeeded();
             returnToMainAfterStopDelete();
             finish();
         });
 
         btnSnooze.setOnClickListener(v -> {
             handler.removeCallbacks(autoStopRunnable);
-            stopRingtoneIfNeeded();
+            handler.removeCallbacks(safeModeWatch);
+            stopPlayerIfNeeded();
             long snoozeEndTime = scheduleSnooze();
             returnToMainAfterSnooze(snoozeEndTime);
             finish();
@@ -126,25 +125,34 @@ public class AlarmAlertActivity extends AppCompatActivity {
     }
     private final Runnable safeModeWatch = new Runnable() {
         @Override public void run() {
-            if (safeMode && !isEarphoneOutputConnected()) {
-                stopRingtoneIfNeeded();
+            boolean nowConnected = isEarphoneOutputConnected();
+
+            if (safeMode && lastEarConnected && !nowConnected) {
+                Toast.makeText(AlarmAlertActivity.this,
+                        "이어폰 연결 해제됨 → 안전모드로 알람 삭제",
+                        Toast.LENGTH_SHORT).show();
+
+                stopPlayerIfNeeded();
+                handler.removeCallbacks(this);
                 returnToMainAfterStopDelete();
                 finish();
                 return;
             }
+
+            lastEarConnected = nowConnected;
             handler.postDelayed(this, 1000L);
         }
     };
 
 
 
-    private void startRingtone() {
+
+    private void startPlayer() {
         Uri uri = null;
 
         if (soundUriStr != null && !soundUriStr.isEmpty()) {
             uri = Uri.parse(soundUriStr);
         }
-
         if (uri == null) {
             uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
             if (uri == null) {
@@ -152,19 +160,34 @@ public class AlarmAlertActivity extends AppCompatActivity {
             }
         }
 
-        if (uri != null) {
-            ringtone = RingtoneManager.getRingtone(getApplicationContext(), uri);
-            if (ringtone != null) {
-                ringtone.play();
-            }
+        stopPlayerIfNeeded();
+
+        try {
+            player = new MediaPlayer();
+            player.setAudioAttributes(new AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build());
+            player.setDataSource(this, uri);
+            player.setLooping(true);   // 알람처럼 계속 울리게
+            player.prepare();
+            player.start();
+        } catch (Exception e) {
+            // 여기서 죽으면 알람 자체가 안 울려서 과제 기준으로는 토스트 정도만
+            Toast.makeText(this, "알람 재생 실패", Toast.LENGTH_SHORT).show();
         }
     }
 
-    private void stopRingtoneIfNeeded() {
-        if (ringtone != null && ringtone.isPlaying()) {
-            ringtone.stop();
+    private void stopPlayerIfNeeded() {
+        if (player != null) {
+            try {
+                if (player.isPlaying()) player.stop();
+            } catch (Exception ignored) {}
+            try { player.release(); } catch (Exception ignored) {}
+            player = null;
         }
     }
+
 
     private long scheduleSnooze() {
         AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
@@ -241,7 +264,7 @@ public class AlarmAlertActivity extends AppCompatActivity {
         super.onDestroy();
         handler.removeCallbacks(autoStopRunnable);
         handler.removeCallbacks(safeModeWatch);
-        stopRingtoneIfNeeded();
+        stopPlayerIfNeeded();
     }
 
     private void returnToMainNormal() {

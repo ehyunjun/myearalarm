@@ -36,6 +36,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="타이머 알람"
+            android:textColor="@color/button_text"
             android:textSize="20sp"
             android:textStyle="bold"
             android:gravity="center"/>
@@ -85,7 +86,8 @@
             <NumberPicker
                 android:id="@+id/npHour"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:theme="@style/NumberPickerTextBlack"/>
 
             <TextView
                 android:layout_width="wrap_content"
@@ -104,7 +106,8 @@
             <NumberPicker
                 android:id="@+id/npMinute"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:theme="@style/NumberPickerTextBlack"/>
 
             <TextView
                 android:layout_width="wrap_content"
@@ -123,7 +126,8 @@
             <NumberPicker
                 android:id="@+id/npSecond"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:theme="@style/NumberPickerTextBlack"/>
 
             <TextView
                 android:layout_width="wrap_content"

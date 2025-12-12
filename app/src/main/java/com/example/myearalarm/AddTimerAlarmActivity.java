@@ -16,17 +16,20 @@ import androidx.appcompat.widget.SwitchCompat;
 import java.util.Locale;
 
 public class AddTimerAlarmActivity extends AppCompatActivity {
+
     private NumberPicker npHour, npMinute, npSecond;
     private Button btnCancelTimer, btnSetTimer, btnDeleteTimer;
     private TextView tvTimerTitle, tvSound;
+
     private boolean isEdit = false;
     private int editIndex = -1;
+
     private String selectedSoundUri;
     private static final int REQ_PICK_SOUND = 2001;
+
     private SwitchCompat switchRepeat, switchSafeMode;
 
     @Override
-
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_timer_alarm);
@@ -46,42 +49,30 @@ public class AddTimerAlarmActivity extends AppCompatActivity {
         switchRepeat = findViewById(R.id.switchRepeat);
         switchSafeMode = findViewById(R.id.switchSafeMode);
 
-
-        setupNumberPickers(npHour, 0, 23);
-        setupNumberPickers(npMinute, 0, 59);
-        setupNumberPickers(npSecond, 0, 59);
+        setupNumberPicker(npHour, 0, 23);
+        setupNumberPicker(npMinute, 0, 59);
+        setupNumberPicker(npSecond, 0, 59);
 
         Intent intent = getIntent();
         isEdit = intent.getBooleanExtra("isEdit", false);
         editIndex = intent.getIntExtra("index", -1);
 
-        boolean repeatFromIntent = intent.getBooleanExtra("repeat", true);
-        switchRepeat.setChecked(repeatFromIntent);
+        switchRepeat.setChecked(intent.getBooleanExtra("repeat", true));
+        switchSafeMode.setChecked(intent.getBooleanExtra("safeMode", true));
 
-        boolean safeFromIntent = intent.getBooleanExtra("safeMode", true);
-        switchSafeMode.setChecked(safeFromIntent);
-
-        String defaultUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-                .toString();
+        String defaultUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM).toString();
         selectedSoundUri = defaultUri;
 
         String soundFromIntent = intent.getStringExtra("soundUri");
-        if (soundFromIntent != null) {
-            selectedSoundUri = soundFromIntent;
-        }
+        if (soundFromIntent != null) selectedSoundUri = soundFromIntent;
 
         updateSoundTitle();
-
         rowSound.setOnClickListener(v -> openSoundPicker());
 
         if (isEdit) {
-            int h = intent.getIntExtra("hour", 0);
-            int m = intent.getIntExtra("minute", 0);
-            int s = intent.getIntExtra("second", 0);
-
-            npHour.setValue(h);
-            npMinute.setValue(m);
-            npSecond.setValue(s);
+            npHour.setValue(intent.getIntExtra("hour", 0));
+            npMinute.setValue(intent.getIntExtra("minute", 0));
+            npSecond.setValue(intent.getIntExtra("second", 0));
 
             tvTimerTitle.setText("알람 편집");
             btnDeleteTimer.setVisibility(View.VISIBLE);
@@ -101,7 +92,6 @@ public class AddTimerAlarmActivity extends AppCompatActivity {
             result.putExtra("isDelete", true);
             result.putExtra("repeat", switchRepeat.isChecked());
             result.putExtra("safeMode", switchSafeMode.isChecked());
-
             setResult(RESULT_OK, result);
             finish();
         });
@@ -116,8 +106,6 @@ public class AddTimerAlarmActivity extends AppCompatActivity {
             String displayText = String.format(Locale.getDefault(),
                     "%02d시간 %02d분 %02d초", h, m, s);
 
-            boolean repeat = switchRepeat.isChecked();
-
             Intent result = new Intent();
             result.putExtra("hour", h);
             result.putExtra("minute", m);
@@ -130,7 +118,7 @@ public class AddTimerAlarmActivity extends AppCompatActivity {
             result.putExtra("index", editIndex);
             result.putExtra("isDelete", false);
 
-            result.putExtra("repeat", repeat);
+            result.putExtra("repeat", switchRepeat.isChecked());
             result.putExtra("safeMode", switchSafeMode.isChecked());
 
             setResult(RESULT_OK, result);
@@ -138,11 +126,10 @@ public class AddTimerAlarmActivity extends AppCompatActivity {
         });
     }
 
-    private void setupNumberPickers(NumberPicker picker, int min, int max) {
+    private void setupNumberPicker(NumberPicker picker, int min, int max) {
         picker.setMinValue(min);
         picker.setMaxValue(max);
         picker.setWrapSelectorWheel(true);
-
         picker.setDescendantFocusability(NumberPicker.FOCUS_BLOCK_DESCENDANTS);
         picker.setFormatter(value -> String.format(Locale.getDefault(), "%02d", value));
     }
@@ -154,12 +141,12 @@ public class AddTimerAlarmActivity extends AppCompatActivity {
         intent.putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false);
 
         if (selectedSoundUri != null) {
-            Uri existing = Uri.parse(selectedSoundUri);
-            intent.putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, existing);
+            intent.putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, Uri.parse(selectedSoundUri));
         }
 
         startActivityForResult(intent, REQ_PICK_SOUND);
     }
+
     private void updateSoundTitle() {
         if (tvSound == null) return;
 
@@ -170,12 +157,9 @@ public class AddTimerAlarmActivity extends AppCompatActivity {
 
         Uri uri = Uri.parse(selectedSoundUri);
         Ringtone ringtone = RingtoneManager.getRingtone(this, uri);
-        if (ringtone != null) {
-            tvSound.setText(ringtone.getTitle(this));
-        } else {
-            tvSound.setText("알람음 없음");
-        }
+        tvSound.setText(ringtone != null ? ringtone.getTitle(this) : "알람음 없음");
     }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);

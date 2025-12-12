@@ -9,4 +9,11 @@
         <item name="android:windowIsTranslucent">true</item>
         <item name="android:windowBackground">@android:color/transparent</item>
     </style>
+
+    <style name="NumberPickerTextBlack">
+        <item name="android:textColorPrimary">@color/button_text</item>
+        <item name="android:textColorSecondary">@color/button_text</item>
+        <item name="android:textColorHint">@color/button_text</item>
+    </style>
+
 </resources>
