@@ -55,6 +55,9 @@ public class MainActivity extends AppCompatActivity {
 
     private final ArrayList<Boolean> clockRepeatFlags = new ArrayList<>();
     private final ArrayList<Boolean> timerRepeatFlags = new ArrayList<>();
+    private final ArrayList<Boolean> clockSafeModeFlags = new ArrayList<>();
+    private final ArrayList<Boolean> timerSafeModeFlags = new ArrayList<>();
+
 
     private final ArrayList<Long> clockSnoozeEndTimes = new ArrayList<>();
     private final ArrayList<Long> timerSnoozeEndTimes = new ArrayList<>();
@@ -92,12 +95,14 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    private void addNewTimer(long totalMillis, String initialText, String soundUri, boolean repeat) {
+    private void addNewTimer(long totalMillis, String initialText, String soundUri, boolean repeat, boolean safeMode) {
         timerAlarms.add(initialText);
         timerRemainingMillis.add(totalMillis);
         timerSoundUris.add(soundUri);
         timerRepeatFlags.add(repeat);
         timerSnoozeEndTimes.add(0L);
+        timerSafeModeFlags.add(safeMode);
+
 
         CountDownTimer timer = new CountDownTimer(totalMillis, 1000) {
             @Override
@@ -138,6 +143,10 @@ public class MainActivity extends AppCompatActivity {
                 boolean repeatFlag =
                         (idx < timerRepeatFlags.size() && Boolean.TRUE.equals(timerRepeatFlags.get(idx)));
                 alertIntent.putExtra("repeat", repeatFlag);
+                boolean safeModeFlag =
+                        (idx < timerSafeModeFlags.size()) && Boolean.TRUE.equals(timerSafeModeFlags.get(idx));
+                alertIntent.putExtra("safeMode", safeModeFlag);
+
                 alertIntent.putExtra("isTimer", true);
 
                 alertIntent.putExtra("timerIndex", idx);
@@ -175,7 +184,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void scheduleClockAlarm(long triggerAtMillis, int alarmId,
                                     String displayText, String soundUri,
-                                    boolean repeat) {
+                                    boolean repeat, boolean safeMode) {
         AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
         if (alarmManager == null) return;
 
@@ -185,6 +194,7 @@ public class MainActivity extends AppCompatActivity {
         intent.putExtra("soundUri", soundUri);
         intent.putExtra("repeat", repeat);
         intent.putExtra("isTimer", false);
+        intent.putExtra("safeMode", safeMode);
 
         PendingIntent pendingIntent = PendingIntent.getBroadcast(
                 this,
@@ -304,6 +314,9 @@ public class MainActivity extends AppCompatActivity {
                 boolean repeat = clockRepeatFlags.get(position);
                 intent.putExtra("repeat", repeat);
             }
+            if (position < clockSafeModeFlags.size()) {
+                intent.putExtra("safeMode", clockSafeModeFlags.get(position));
+            }
             startActivityForResult(intent, REQ_ADD_CLOCK);
         });
 
@@ -328,6 +341,9 @@ public class MainActivity extends AppCompatActivity {
             if (position < timerRepeatFlags.size()) {
                 boolean repeat = timerRepeatFlags.get(position);
                 intent.putExtra("repeat", repeat);
+            }
+            if (position < timerSafeModeFlags.size()) {
+                intent.putExtra("safeMode", timerSafeModeFlags.get(position));
             }
 
             startActivityForResult(intent, REQ_ADD_TIMER);
@@ -370,6 +386,10 @@ public class MainActivity extends AppCompatActivity {
                     if (idx < timerRepeatFlags.size()) {
                         timerRepeatFlags.remove(idx);
                     }
+                    if (idx < timerSafeModeFlags.size()) {
+                        timerSafeModeFlags.remove(idx);
+                    }
+
                     if (idx < timerSnoozeEndTimes.size()) {
                         timerSnoozeEndTimes.remove(idx);
                     }
@@ -390,6 +410,10 @@ public class MainActivity extends AppCompatActivity {
                     if (idx < clockRepeatFlags.size()) {
                         clockRepeatFlags.remove(idx);
                     }
+                    if (idx < clockSafeModeFlags.size()) {
+                        clockSafeModeFlags.remove(idx);
+                    }
+
                     if (idx < clockSnoozeEndTimes.size()) {
                         clockSnoozeEndTimes.remove(idx);
                     }
@@ -462,6 +486,7 @@ public class MainActivity extends AppCompatActivity {
 
         boolean isEdit = data.getBooleanExtra("isEdit", false);
         boolean isDelete = data.getBooleanExtra("isDelete", false);
+
         int index = data.getIntExtra("index", -1);
         String displayText = data.getStringExtra("displayText");
 
@@ -469,6 +494,8 @@ public class MainActivity extends AppCompatActivity {
 
             String soundUri = data.getStringExtra("soundUri");
             boolean repeat = data.getBooleanExtra("repeat", true);
+            boolean safeMode = data.getBooleanExtra("safeMode", true);
+
 
             if (displayText == null) {
                 int ampmExtra = data.getIntExtra("ampm", 0);
@@ -517,6 +544,10 @@ public class MainActivity extends AppCompatActivity {
                         if (index < clockSnoozeEndTimes.size()) {
                             clockSnoozeEndTimes.remove(index);
                         }
+                        if (index < clockSafeModeFlags.size()) {
+                            clockSafeModeFlags.remove(index);
+                        }
+
 
                     } else {
                         clockAlarms.set(index, displayText);
@@ -537,6 +568,12 @@ public class MainActivity extends AppCompatActivity {
                         } else {
                             clockRepeatFlags.add(repeat);
                         }
+                        if (index < clockSafeModeFlags.size()) {
+                            clockSafeModeFlags.set(index, safeMode);
+                        } else {
+                            clockSafeModeFlags.add(safeMode);
+                        }
+
 
                         int newAlarmId = (int) System.currentTimeMillis();
                         if (index < clockAlarmIds.size()) {
@@ -545,7 +582,7 @@ public class MainActivity extends AppCompatActivity {
                             clockAlarmIds.add(newAlarmId);
                         }
 
-                        scheduleClockAlarm(triggerAtMillis, newAlarmId, displayText, soundUri, repeat);
+                        scheduleClockAlarm(triggerAtMillis, newAlarmId, displayText, soundUri, repeat, safeMode);
                     }
                 }
 
@@ -554,11 +591,12 @@ public class MainActivity extends AppCompatActivity {
                 clockSoundUris.add(soundUri);
                 clockRepeatFlags.add(repeat);
                 clockSnoozeEndTimes.add(0L);
+                clockSafeModeFlags.add(safeMode);
 
                 int alarmId = (int) System.currentTimeMillis();
                 clockAlarmIds.add(alarmId);
 
-                scheduleClockAlarm(triggerAtMillis, alarmId, displayText, soundUri, repeat);
+                scheduleClockAlarm(triggerAtMillis, alarmId, displayText, soundUri, repeat, safeMode);
             }
 
             clockAdapter.notifyDataSetChanged();
@@ -570,6 +608,7 @@ public class MainActivity extends AppCompatActivity {
             int s = data.getIntExtra("second", 0);
             String soundUri = data.getStringExtra("soundUri");
             boolean repeat = data.getBooleanExtra("repeat", true);
+            boolean safeMode = data.getBooleanExtra("safeMode", true);
 
             long totalMillis = (h * 3600L + m * 60L + s) * 1000L;
 
@@ -597,16 +636,20 @@ public class MainActivity extends AppCompatActivity {
                     if (index < timerSnoozeEndTimes.size()) {
                         timerSnoozeEndTimes.remove(index);
                     }
+                    if (index < timerSafeModeFlags.size()) {
+                        timerSafeModeFlags.remove(index);
+                    }
+
 
                     if (isDelete) {
                         timerAlarms.remove(index);
                     } else {
                         timerAlarms.remove(index);
-                        addNewTimer(totalMillis, displayText, soundUri, repeat);
+                        addNewTimer(totalMillis, displayText, soundUri, repeat, safeMode);
                     }
                 }
             } else {
-                addNewTimer(totalMillis, displayText, soundUri, repeat);
+                addNewTimer(totalMillis, displayText, soundUri, repeat, safeMode);
             }
 
             timerAdapter.notifyDataSetChanged();
@@ -655,7 +698,7 @@ public class MainActivity extends AppCompatActivity {
         private final LayoutInflater inflater;
 
         ClockAlarmAdapter(Context context, ArrayList<String> list) {
-            super(context, 0, list); // ★ 중요: super.getView() 쓰면 안되니까 0
+            super(context, 0, list);
             inflater = LayoutInflater.from(context);
         }
 
@@ -679,14 +722,14 @@ public class MainActivity extends AppCompatActivity {
                 int s = (int) (remainingSec % 60);
 
                 left.setText(baseText);
-                left.setTextColor(ContextCompat.getColor(getContext(), R.color.btn_add_alarm)); // 회색
+                left.setTextColor(ContextCompat.getColor(getContext(), R.color.btn_add_alarm));
 
                 right.setVisibility(View.VISIBLE);
                 right.setText(String.format(Locale.getDefault(), "미루기 %02d:%02d", m, s));
-                right.setTextColor(ContextCompat.getColor(getContext(), R.color.button_text)); // 검정
+                right.setTextColor(ContextCompat.getColor(getContext(), R.color.button_text));
             } else {
                 left.setText(baseText);
-                left.setTextColor(ContextCompat.getColor(getContext(), R.color.button_text)); // 검정
+                left.setTextColor(ContextCompat.getColor(getContext(), R.color.button_text));
                 right.setVisibility(View.GONE);
             }
 
@@ -699,7 +742,7 @@ public class MainActivity extends AppCompatActivity {
         private final LayoutInflater inflater;
 
         TimerAlarmAdapter(Context context, ArrayList<String> list) {
-            super(context, 0, list); // ★ 중요
+            super(context, 0, list);
             inflater = LayoutInflater.from(context);
         }
 
@@ -723,14 +766,14 @@ public class MainActivity extends AppCompatActivity {
                 int s = (int) (remainingSec % 60);
 
                 left.setText(baseText);
-                left.setTextColor(ContextCompat.getColor(getContext(), R.color.btn_add_alarm)); // 회색
+                left.setTextColor(ContextCompat.getColor(getContext(), R.color.btn_add_alarm));
 
                 right.setVisibility(View.VISIBLE);
                 right.setText(String.format(Locale.getDefault(), "미루기 %02d:%02d", m, s));
-                right.setTextColor(ContextCompat.getColor(getContext(), R.color.button_text)); // 검정
+                right.setTextColor(ContextCompat.getColor(getContext(), R.color.button_text));
             } else {
                 left.setText(baseText);
-                left.setTextColor(ContextCompat.getColor(getContext(), R.color.button_text)); // 검정
+                left.setTextColor(ContextCompat.getColor(getContext(), R.color.button_text));
                 right.setVisibility(View.GONE);
             }
 

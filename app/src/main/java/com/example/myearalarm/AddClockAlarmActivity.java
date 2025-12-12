@@ -60,6 +60,9 @@ public class AddClockAlarmActivity extends AppCompatActivity {
         boolean repeatFromIntent = intent.getBooleanExtra("repeat", true);
         switchRepeat.setChecked(repeatFromIntent);
 
+        boolean safeFromIntent = intent.getBooleanExtra("safeMode", true);
+        switchSafeMode.setChecked(safeFromIntent);
+
         String defaultUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
                 .toString();
         selectedSoundUri = defaultUri;
@@ -95,6 +98,7 @@ public class AddClockAlarmActivity extends AppCompatActivity {
             result.putExtra("index", editIndex);
             result.putExtra("isDelete", true);
             result.putExtra("repeat", switchRepeat.isChecked());
+            result.putExtra("safeMode", switchSafeMode.isChecked());
             setResult(RESULT_OK, result);
             finish();
         });
@@ -125,6 +129,8 @@ public class AddClockAlarmActivity extends AppCompatActivity {
             result.putExtra("isDelete", false);
 
             result.putExtra("repeat", repeat);
+            result.putExtra("safeMode", switchSafeMode.isChecked());
+
 
 
             setResult(RESULT_OK, result);

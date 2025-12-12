@@ -28,6 +28,7 @@ public class AlarmAlertActivity extends AppCompatActivity {
     private boolean hasRepeat = false;
     private String soundUriStr;
     private String timeText;
+    private boolean safeMode = false;
 
     private boolean userStopped = false;
 
@@ -47,14 +48,27 @@ public class AlarmAlertActivity extends AppCompatActivity {
         hasRepeat = intent.getBooleanExtra("repeat", false);
         soundUriStr = intent.getStringExtra("soundUri");
         timeText = intent.getStringExtra("timeText");
+        safeMode = intent.getBooleanExtra("safeMode", false);
+
 
         if (timeText != null && !timeText.isEmpty()) {
             tvTitle.setText("알람 (" + timeText + ")");
         } else {
             tvTitle.setText("알람");
         }
+        if (safeMode && !isEarphoneOutputConnected()) {
+            returnToMainAfterStopDelete();
+            finish();
+            return;
+        }
+
 
         startRingtone();
+
+        if (safeMode) {
+            handler.post(safeModeWatch);
+        }
+
 
         autoStopRunnable = () -> {
             stopRingtoneIfNeeded();
@@ -86,6 +100,43 @@ public class AlarmAlertActivity extends AppCompatActivity {
             finish();
         });
     }
+    private boolean isEarphoneOutputConnected() {
+        android.media.AudioManager am =
+                (android.media.AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        if (am == null) return false;
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            android.media.AudioDeviceInfo[] outs =
+                    am.getDevices(android.media.AudioManager.GET_DEVICES_OUTPUTS);
+
+            for (android.media.AudioDeviceInfo d : outs) {
+                int t = d.getType();
+                if (t == android.media.AudioDeviceInfo.TYPE_WIRED_HEADSET
+                        || t == android.media.AudioDeviceInfo.TYPE_WIRED_HEADPHONES
+                        || t == android.media.AudioDeviceInfo.TYPE_USB_HEADSET
+                        || t == android.media.AudioDeviceInfo.TYPE_BLUETOOTH_A2DP
+                        || t == android.media.AudioDeviceInfo.TYPE_BLUETOOTH_SCO) {
+                    return true;
+                }
+            }
+            return false;
+        } else {
+            return am.isWiredHeadsetOn() || am.isBluetoothA2dpOn() || am.isBluetoothScoOn();
+        }
+    }
+    private final Runnable safeModeWatch = new Runnable() {
+        @Override public void run() {
+            if (safeMode && !isEarphoneOutputConnected()) {
+                stopRingtoneIfNeeded();
+                returnToMainAfterStopDelete();
+                finish();
+                return;
+            }
+            handler.postDelayed(this, 1000L);
+        }
+    };
+
+
 
     private void startRingtone() {
         Uri uri = null;
@@ -128,6 +179,8 @@ public class AlarmAlertActivity extends AppCompatActivity {
         intent.putExtra("repeat", hasRepeat);
         intent.putExtra("isTimer", isTimer);
         intent.putExtra("timerIndex", timerIndex);
+        intent.putExtra("safeMode", safeMode);
+
 
         PendingIntent pendingIntent = PendingIntent.getBroadcast(
                 this,
@@ -187,6 +240,7 @@ public class AlarmAlertActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         handler.removeCallbacks(autoStopRunnable);
+        handler.removeCallbacks(safeModeWatch);
         stopRingtoneIfNeeded();
     }
 

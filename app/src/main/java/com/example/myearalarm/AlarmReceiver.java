@@ -14,6 +14,7 @@ public class AlarmReceiver extends BroadcastReceiver {
         int alarmId = intent.getIntExtra("alarmId", -1);
         boolean isTimer = intent.getBooleanExtra("isTimer", false);
         int timerIndex = intent.getIntExtra("timerIndex", -1);
+        boolean safeMode = intent.getBooleanExtra("safeMode", true);
 
         Intent alertIntent = new Intent(context, AlarmAlertActivity.class);
         alertIntent.addFlags(
@@ -28,6 +29,7 @@ public class AlarmReceiver extends BroadcastReceiver {
         alertIntent.putExtra("repeat", repeat);
         alertIntent.putExtra("isTimer", isTimer);
         alertIntent.putExtra("timerIndex", timerIndex);
+        alertIntent.putExtra("safeMode", safeMode);
 
         context.startActivity(alertIntent);
     }
